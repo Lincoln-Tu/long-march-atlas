@@ -2863,7 +2863,12 @@ function pointInPolygon(x, y, poly) {
       if (typeof window === 'undefined') return null;
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return null;
-      const ctx = new AudioCtx();
+      let ctx;
+      try {
+        ctx = new AudioCtx();
+      } catch (error) {
+        return null;
+      }
       const master = ctx.createGain();
       master.gain.value = 0.0001;
       const delay = ctx.createDelay(1.2);
@@ -3823,7 +3828,7 @@ function pointInPolygon(x, y, poly) {
       }
 
       function speakEvent(ev) {
-        if (typeof window === 'undefined' || !window.speechSynthesis) {
+        if (typeof window === 'undefined' || !window.speechSynthesis || !window.SpeechSynthesisUtterance) {
           showNotice('当前浏览器不支持语音讲解');
           return;
         }
@@ -3861,7 +3866,14 @@ function pointInPolygon(x, y, poly) {
         };
         setSpeakingId(ev.id);
         duckMusic(true);
-        synth.speak(utterance);
+        try {
+          synth.speak(utterance);
+        } catch (error) {
+          setSpeakingId(null);
+          duckMusic(false);
+          showNotice('语音播放失败，请检查系统语音设置');
+          return;
+        }
         clearTimeout(speechTimer.current);
         speechTimer.current = setTimeout(function () {
           if (!synth.speaking && !synth.pending) {
