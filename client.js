@@ -2812,6 +2812,188 @@ function pointInPolygon(x, y, poly) {
     }
 
     /* ============================================================
+       Original procedural marching score (Web Audio, no external media)
+       ============================================================ */
+    let musicEngine = null;
+
+    function midiHz(midi) {
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    function ensureMusicEngine() {
+      if (musicEngine) return musicEngine;
+      if (typeof window === 'undefined') return null;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      const ctx = new AudioCtx();
+      const master = ctx.createGain();
+      master.gain.value = 0.0001;
+      const delay = ctx.createDelay(1.2);
+      delay.delayTime.value = 0.33;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.24;
+      delay.connect(feedback);
+      feedback.connect(delay);
+      delay.connect(master);
+      master.connect(ctx.destination);
+      musicEngine = {
+        ctx: ctx, master: master, delay: delay,
+        timer: null, next: 0, step: 0, playing: false,
+        volume: 0.35, ducked: false,
+      };
+      return musicEngine;
+    }
+
+    function musicLevel(engine) {
+      const base = engine.volume * 0.55;
+      return engine.ducked ? base * 0.16 : base;
+    }
+
+    function applyMusicLevel(engine, immediate) {
+      if (!engine) return;
+      const now = engine.ctx.currentTime;
+      const target = Math.max(0.0001, musicLevel(engine));
+      engine.master.gain.cancelScheduledValues(now);
+      if (immediate) engine.master.gain.setValueAtTime(target, now);
+      else engine.master.gain.linearRampToValueAtTime(target, now + 0.35);
+    }
+
+    function scheduleTone(engine, type, midi, when, dur, level, filterFreq, sendDelay) {
+      const ctx = engine.ctx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(midiHz(midi), when);
+      let tail = gain;
+      if (filterFreq) {
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(filterFreq, when);
+        osc.connect(filter);
+        filter.connect(gain);
+      } else {
+        osc.connect(gain);
+      }
+      gain.gain.setValueAtTime(0.0001, when);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, level), when + 0.035);
+      gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+      gain.connect(engine.master);
+      if (sendDelay) gain.connect(engine.delay);
+      osc.start(when);
+      osc.stop(when + dur + 0.06);
+      return tail;
+    }
+
+    function scheduleDrum(engine, when, high) {
+      const ctx = engine.ctx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(high ? 150 : 96, when);
+      osc.frequency.exponentialRampToValueAtTime(high ? 70 : 42, when + 0.18);
+      gain.gain.setValueAtTime(high ? 0.06 : 0.13, when);
+      gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.24);
+      osc.connect(gain);
+      gain.connect(engine.master);
+      osc.start(when);
+      osc.stop(when + 0.28);
+    }
+
+    function scheduleGong(engine, when) {
+      const partials = [98, 147, 196, 294];
+      for (let i = 0; i < partials.length; i++) {
+        scheduleTone(engine, 'sine', 45 + i * 7, when, 2.8, 0.016 / (i + 1), null, true);
+      }
+    }
+
+    function playMusicStep(engine, step, when) {
+      const chords = [
+        [50, 53, 57], [46, 50, 53], [41, 45, 48], [48, 52, 55],
+        [50, 53, 57], [43, 46, 50], [46, 50, 53], [45, 49, 52],
+      ];
+      const bar = Math.floor(step / 8) % chords.length;
+      const chord = chords[bar];
+      if (step % 8 === 0) {
+        for (let i = 0; i < chord.length; i++) {
+          scheduleTone(engine, 'triangle', chord[i], when, 3.8, 0.024, 1400, false);
+        }
+        if (bar === 0 || bar === 4) scheduleGong(engine, when);
+      }
+      if (step % 4 === 0) {
+        scheduleTone(engine, 'sine', chord[0] - 12, when, 0.9, 0.10, null, false);
+        scheduleDrum(engine, when, false);
+      }
+      if (step % 8 === 4) scheduleDrum(engine, when, true);
+
+      const melody = [
+        62, null, 65, 67, 69, null, 67, 65,
+        62, 65, 67, null, 72, 69, 67, null,
+        65, 67, 69, 72, 74, null, 72, 69,
+        67, 65, 62, null, 65, 67, 69, null,
+        62, null, 65, 67, 69, 72, 74, 72,
+        69, 67, 65, null, 62, 65, 67, null,
+        65, 69, 72, 74, 72, 69, 67, 65,
+        62, null, 67, 65, 62, null, null, null,
+      ];
+      const note = melody[step % melody.length];
+      if (note != null) {
+        scheduleTone(engine, 'sawtooth', note, when, 1.05, 0.032, 1750, true);
+      }
+    }
+
+    function scheduleMusic() {
+      const engine = musicEngine;
+      if (!engine || !engine.playing) return;
+      const horizon = engine.ctx.currentTime + 0.9;
+      while (engine.next < horizon) {
+        playMusicStep(engine, engine.step, engine.next);
+        engine.next += 0.455;
+        engine.step = (engine.step + 1) % 64;
+      }
+    }
+
+    function startMusic(volume) {
+      const engine = ensureMusicEngine();
+      if (!engine) return false;
+      engine.volume = volume;
+      engine.ducked = false;
+      engine.playing = true;
+      engine.step = 0;
+      engine.next = engine.ctx.currentTime + 0.16;
+      if (engine.ctx.state === 'suspended') engine.ctx.resume();
+      if (engine.timer) clearInterval(engine.timer);
+      applyMusicLevel(engine, true);
+      scheduleMusic();
+      engine.timer = setInterval(scheduleMusic, 240);
+      return true;
+    }
+
+    function stopMusic() {
+      const engine = musicEngine;
+      if (!engine) return;
+      engine.playing = false;
+      if (engine.timer) {
+        clearInterval(engine.timer);
+        engine.timer = null;
+      }
+      applyMusicLevel(engine, false);
+    }
+
+    function setMusicVolume(volume) {
+      const engine = ensureMusicEngine();
+      if (!engine) return;
+      engine.volume = volume;
+      applyMusicLevel(engine, false);
+    }
+
+    function duckMusic(on) {
+      const engine = musicEngine;
+      if (!engine) return;
+      engine.ducked = on;
+      applyMusicLevel(engine, false);
+    }
+
+    /* ============================================================
        Small UI helpers
        ============================================================ */
     function StarIcon(props) {
