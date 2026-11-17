@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>长征 · 三维全景沙盘</title>
+  <meta name="description" content="可拖动时间轴的长征三维动态地图：省界、苏维埃区域、雪山草地湖泊地貌，各路红军与国民党军位置、关键事件与红军兵力变化。" />
+  <meta name="theme-color" content="#050a12" />
+  <meta property="og:title" content="长征 · 三维全景沙盘" />
+  <meta property="og:description" content="1934—1936，拖动时间轴查看各路红军与敌军的行军态势。" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="./icon.svg" />
+  <style>
+    :root { color-scheme: dark; }
+    html, body {
+      margin: 0; min-height: 100%; overflow: hidden;
+      background: #050a12; color: #e8eef7;
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    #app { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
+    #launcher-root {
+      position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+      width: min(560px, 92vw); z-index: 20;
+    }
+    #launcher-root .lma-launcher { margin: 0; }
+    #fallback {
+      position: fixed; inset: 0; display: grid; place-items: center; text-align: center;
+      padding: 24px; background:
+        radial-gradient(900px 500px at 50% 12%, rgba(38,68,94,.55), transparent 65%),
+        linear-gradient(160deg, #08111d, #050a12 58%, #071320);
+    }
+    #fallback .mark {
+      width: 54px; height: 54px; margin: 0 auto 18px; display: grid; place-items: center;
+      border-radius: 15px; border: 1px solid rgba(232,196,122,.35);
+      background: radial-gradient(circle at 35% 20%, rgba(120,52,44,.85), rgba(28,14,16,.92));
+      box-shadow: 0 0 32px rgba(232,196,122,.12);
+    }
+    #fallback h1 {
+      margin: 0; font-family: "Noto Serif SC", "Songti SC", "STSong", serif;
+      font-size: clamp(22px, 3.2vw, 34px); letter-spacing: .16em; color: #f4ead8; font-weight: 700;
+    }
+    #fallback p {
+      margin: 12px auto 0; max-width: 560px; font-size: 12px; line-height: 1.9;
+      color: #93a8bf; letter-spacing: .04em;
+    }
+    #fallback .hint { margin-top: 22px; font-size: 10px; color: #6f849b; letter-spacing: .12em; }
+    #boot {
+      position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+      background: #050a12; color: #9fb2c6; font-size: 12px; letter-spacing: .14em;
+      transition: opacity .35s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="fallback">
+    <div>
+      <div class="mark" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2.5l2.9 6.9 7.4.6-5.6 4.9 1.7 7.3L12 18.4l-6.4 3.8 1.7-7.3-5.6-4.9 7.4-.6z" fill="#e8c47a"/>
+        </svg>
+      </div>
+      <h1>长征 · 三维全景沙盘</h1>
+      <p>1934 年 10 月 — 1936 年 10 月。拖动时间轴，查看各路红军与国民党军的行军态势、省界与苏维埃区域，以及雪山、草地、河流与湖泊。</p>
+      <div class="hint">点击下方按钮打开交互地图</div>
+    </div>
+  </div>
+  <div id="app"></div>
+  <div id="launcher-root"></div>
+  <div id="boot" role="status" aria-live="polite">正在加载长征地图…</div>
+
+  <script src="./vendor/react.production.min.js"></script>
+  <script src="./vendor/react-dom.production.min.js"></script>
+  <script>
+    window.__ModuleLoader__ = {
+      load: function (definition) { window.__ATLAS_DEF__ = definition; }
+    };
+    try {
+      if (!/long-march-atlas/.test(location.hash)) {
+        history.replaceState(null, '', '#long-march-atlas');
+      }
+    } catch (error) { /* file:// and sandboxed contexts can refuse replaceState */ }
+  </script>
+  <script src="./client.js"></script>
+  <script>
+    (function () {
+      var boot = document.getElementById('boot');
+      var definition = window.__ATLAS_DEF__;
+      if (!definition) {
+        boot.textContent = '地图脚本加载失败，请检查 client.js 是否存在。';
+        return;
+      }
+      var React = window.React;
+      var ReactDOM = window.ReactDOM;
+      var registry = {};
+      var api = definition.factory(function (id) {
+        if (id === 'react') return React;
+        throw new Error('Unknown module: ' + id);
+      });
+      api.apply({
+        slots: {
+          inject: function (key, callback) { return callback(); },
+          register: function (options, component) {
+            registry[options.id] = component;
+            return function () {};
+          }
+        }
+      });
+      var overlay = registry['long-march-atlas-overlay'];
+      var launcher = registry['long-march-atlas-launcher'];
+      if (!overlay || !launcher) {
+        boot.textContent = '地图组件注册失败。';
+        return;
+      }
+      ReactDOM.createRoot(document.getElementById('app')).render(React.createElement(overlay));
+      ReactDOM.createRoot(document.getElementById('launcher-root')).render(React.createElement(launcher));
+      boot.remove();
+    })();
+  </script>
+</body>
+</html>
