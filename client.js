@@ -3145,6 +3145,20 @@ function pointInPolygon(x, y, poly) {
         const el = overlayRef.current;
         el.focus({ preventScroll: true });
         el.setPointerCapture(e.pointerId);
+        if (e.pointerType === 'touch') {
+          touchRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (touchRef.current.size >= 2) {
+            const points = Array.from(touchRef.current.values()).slice(0, 2);
+            pinchRef.current = {
+              dist: Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y)),
+              zoom: camRef.current.zoom,
+            };
+            dragRef.current = null;
+            el.style.cursor = 'grabbing';
+            e.preventDefault();
+            return;
+          }
+        }
         dragRef.current = {
           x: e.clientX, y: e.clientY, button: e.button,
           start: Object.assign({}, camRef.current), shift: e.shiftKey, moved: false,
@@ -3154,6 +3168,18 @@ function pointInPolygon(x, y, poly) {
       }
 
       function onPointerMove(e) {
+        if (e.pointerType === 'touch' && touchRef.current.has(e.pointerId)) {
+          touchRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (touchRef.current.size >= 2 && pinchRef.current) {
+            const points = Array.from(touchRef.current.values()).slice(0, 2);
+            const dist = Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y));
+            camRef.current = Object.assign({}, camRef.current, {
+              zoom: clamp(pinchRef.current.zoom * dist / pinchRef.current.dist, 0.55, 4.2),
+            });
+            markDirty();
+            return;
+          }
+        }
         const d = dragRef.current;
         if (d) {
           const dx = e.clientX - d.x;
@@ -3191,6 +3217,21 @@ function pointInPolygon(x, y, poly) {
       }
 
       function onPointerUp(e) {
+        if (e.pointerType === 'touch') {
+          const wasPinch = touchRef.current.size >= 2;
+          touchRef.current.delete(e.pointerId);
+          if (touchRef.current.size < 2) pinchRef.current = null;
+          if (wasPinch) {
+            dragRef.current = null;
+            markDirty();
+            const el = overlayRef.current;
+            if (el) {
+              if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+              el.style.cursor = 'grab';
+            }
+            return;
+          }
+        }
         const d = dragRef.current;
         dragRef.current = null;
         markDirty();
