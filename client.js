@@ -3530,6 +3530,27 @@ function pointInPolygon(x, y, poly) {
                 animateTo({ lon: ev.lon, lat: ev.lat, zoom: Math.max(1.35, camRef.current.zoom) });
               }
             }
+          } else if (window.innerWidth < 720) {
+            const rect = overlayRef.current.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+            const eventHits = (stateRef.current.hitRef || []).filter(function (item) { return item.type === 'event'; });
+            let nearest = null;
+            let nearestDist = 52;
+            for (let i = 0; i < eventHits.length; i++) {
+              const dist = Math.hypot(eventHits[i].x - px, eventHits[i].y - py);
+              if (dist < nearestDist) {
+                nearest = eventHits[i];
+                nearestDist = dist;
+              }
+            }
+            if (nearest) {
+              const ev = EVENTS.filter(function (item) { return item.id === nearest.id; })[0];
+              if (ev) {
+                callbacksRef.current.onSelectEvent(ev);
+                animateTo({ lon: ev.lon, lat: ev.lat, zoom: Math.max(1.25, camRef.current.zoom) });
+              }
+            }
           }
         }
       }
@@ -3756,6 +3777,7 @@ function pointInPolygon(x, y, poly) {
       const [mobileEventId, setMobileEventId] = useState(null);
       const stageRef = useRef(null);
       const noticeTimer = useRef(0);
+      const speechTimer = useRef(0);
 
       const dayRef = useRef(day);
       dayRef.current = day;
@@ -3785,6 +3807,7 @@ function pointInPolygon(x, y, poly) {
       }
 
       function stopSpeech() {
+        clearTimeout(speechTimer.current);
         if (typeof window !== 'undefined' && window.speechSynthesis) {
           window.speechSynthesis.cancel();
         }
@@ -3815,26 +3838,38 @@ function pointInPolygon(x, y, poly) {
         utterance.pitch = 0.78;
         utterance.volume = 1;
         utterance.onstart = function () {
+          clearTimeout(speechTimer.current);
           setSpeakingId(ev.id);
           duckMusic(true);
         };
         utterance.onend = function () {
+          clearTimeout(speechTimer.current);
           setSpeakingId(null);
           duckMusic(false);
         };
         utterance.onerror = function () {
+          clearTimeout(speechTimer.current);
           setSpeakingId(null);
           duckMusic(false);
         };
         setSpeakingId(ev.id);
         duckMusic(true);
         synth.speak(utterance);
+        clearTimeout(speechTimer.current);
+        speechTimer.current = setTimeout(function () {
+          if (!synth.speaking && !synth.pending) {
+            setSpeakingId(null);
+            duckMusic(false);
+            showNotice('系统语音未响应，请检查中文语音包');
+          }
+        }, 2600);
       }
 
       useEffect(function () {
         if (!open) {
           stopMusic();
           setMusicOn(false);
+          clearTimeout(speechTimer.current);
           if (typeof window !== 'undefined' && window.speechSynthesis) {
             window.speechSynthesis.cancel();
           }
