@@ -4005,7 +4005,7 @@ function pointInPolygon(x, y, poly) {
                     onClick: function () { speakEvent(e); },
                     title: '男声语音讲解',
                     'aria-pressed': speakingId === e.id,
-                  }, speakingId === e.id ? '停止口播' : '口播讲解'),
+                  }, speakingId === e.id ? '停止口播' : '男声讲解'),
                   h('button', { onClick: function () { jumpEvent(e); } }, '地图定位'),
                   pick.state === 'next'
                     ? h('span', null, '距此还有 ' + Math.max(0, Math.round(e.idx - day)) + ' 天')
@@ -4143,7 +4143,7 @@ function pointInPolygon(x, y, poly) {
                 className: speakingId === mobileEvent.id ? 'on' : '',
                 onClick: function () { speakEvent(mobileEvent); },
                 'aria-pressed': speakingId === mobileEvent.id,
-              }, speakingId === mobileEvent.id ? '停止口播' : '口播讲解'),
+              }, speakingId === mobileEvent.id ? '停止口播' : '男声讲解'),
               h('button', {
                 onClick: function () {
                   if (stageRef.current) stageRef.current.focus(mobileEvent.lon, mobileEvent.lat, 1.7);
