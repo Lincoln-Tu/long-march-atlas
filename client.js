@@ -3039,7 +3039,7 @@ function pointInPolygon(x, y, poly) {
 
     function duckMusic(on) {
       const engine = musicEngine;
-      if (!engine) return;
+      if (!engine || !engine.playing) return;
       engine.ducked = on;
       applyMusicLevel(engine, false);
     }
