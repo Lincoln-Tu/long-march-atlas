@@ -2900,10 +2900,8 @@ function pointInPolygon(x, y, poly) {
     }
 
     function scheduleGong(engine, when) {
-      const partials = [98, 147, 196, 294];
-      for (let i = 0; i < partials.length; i++) {
-        scheduleTone(engine, 'sine', 45 + i * 7, when, 2.8, 0.016 / (i + 1), null, true);
-      }
+      scheduleTone(engine, 'sine', 33, when, 3.6, 0.05, null, true);
+      scheduleTone(engine, 'triangle', 40, when, 2.8, 0.018, 700, true);
     }
 
     function playMusicStep(engine, step, when) {
@@ -2959,12 +2957,27 @@ function pointInPolygon(x, y, poly) {
       engine.ducked = false;
       engine.playing = true;
       engine.step = 0;
-      engine.next = engine.ctx.currentTime + 0.16;
-      if (engine.ctx.state === 'suspended') engine.ctx.resume();
-      if (engine.timer) clearInterval(engine.timer);
+      engine.next = Infinity;
+      if (engine.timer) {
+        clearInterval(engine.timer);
+        engine.timer = null;
+      }
       applyMusicLevel(engine, true);
-      scheduleMusic();
-      engine.timer = setInterval(scheduleMusic, 240);
+      const begin = function () {
+        if (!engine.playing) return;
+        engine.next = engine.ctx.currentTime + 0.16;
+        engine.step = 0;
+        scheduleMusic();
+        if (engine.timer) clearInterval(engine.timer);
+        engine.timer = setInterval(scheduleMusic, 240);
+      };
+      if (engine.ctx.state === 'suspended') {
+        engine.ctx.resume().then(begin).catch(function () {
+          engine.playing = false;
+        });
+      } else {
+        begin();
+      }
       return true;
     }
 
@@ -3706,6 +3719,10 @@ function pointInPolygon(x, y, poly) {
       const [selected, setSelected] = useState('r1');
       const [follow, setFollow] = useState(false);
       const [notice, setNotice] = useState('');
+      const [musicOn, setMusicOn] = useState(false);
+      const [musicVolume, setMusicVolumeState] = useState(35);
+      const [speakingId, setSpeakingId] = useState(null);
+      const [mobileEventId, setMobileEventId] = useState(null);
       const stageRef = useRef(null);
       const noticeTimer = useRef(0);
 
@@ -3716,6 +3733,92 @@ function pointInPolygon(x, y, poly) {
         setNotice(text);
         clearTimeout(noticeTimer.current);
         noticeTimer.current = setTimeout(function () { setNotice(''); }, 2200);
+      }, []);
+
+      function toggleMusic() {
+        if (musicOn) {
+          stopMusic();
+          setMusicOn(false);
+          showNotice('背景音乐已暂停');
+          return;
+        }
+        const ok = startMusic(musicVolume / 100);
+        setMusicOn(ok);
+        showNotice(ok ? '原创行军主题配乐' : '当前浏览器不支持音频');
+      }
+
+      function changeMusicVolume(value) {
+        const v = clamp(Number(value) || 0, 0, 100);
+        setMusicVolumeState(v);
+        setMusicVolume(v / 100);
+      }
+
+      function stopSpeech() {
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+        setSpeakingId(null);
+        duckMusic(false);
+      }
+
+      function speakEvent(ev) {
+        if (typeof window === 'undefined' || !window.speechSynthesis) {
+          showNotice('当前浏览器不支持语音讲解');
+          return;
+        }
+        if (speakingId === ev.id) {
+          stopSpeech();
+          showNotice('口播已停止');
+          return;
+        }
+        const synth = window.speechSynthesis;
+        synth.cancel();
+        const utterance = new SpeechSynthesisUtterance(narrationFor(ev));
+        const voices = synth.getVoices().filter(function (v) { return /^zh/i.test(v.lang); });
+        const male = voices.find(function (v) {
+          return /yunxi|yunjian|kangkang|male|男/i.test(v.name);
+        }) || voices.find(function (v) { return /zh-CN/i.test(v.lang); }) || voices[0];
+        if (male) utterance.voice = male;
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.9;
+        utterance.pitch = 0.78;
+        utterance.volume = 1;
+        utterance.onstart = function () {
+          setSpeakingId(ev.id);
+          duckMusic(true);
+        };
+        utterance.onend = function () {
+          setSpeakingId(null);
+          duckMusic(false);
+        };
+        utterance.onerror = function () {
+          setSpeakingId(null);
+          duckMusic(false);
+        };
+        setSpeakingId(ev.id);
+        duckMusic(true);
+        synth.speak(utterance);
+      }
+
+      useEffect(function () {
+        if (!open) {
+          stopMusic();
+          setMusicOn(false);
+          if (typeof window !== 'undefined' && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+          }
+          setSpeakingId(null);
+          duckMusic(false);
+        }
+      }, [open]);
+
+      useEffect(function () {
+        return function () {
+          stopMusic();
+          if (typeof window !== 'undefined' && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+          }
+        };
       }, []);
 
       useEffect(function () {
@@ -3768,10 +3871,14 @@ function pointInPolygon(x, y, poly) {
       const f = FORCE_BY_ID[selected];
       const pos = forceAt(f, day);
       const strength = f.side === 'red' ? strengthAt(f, day) : 0;
+      const mobileEvent = mobileEventId
+        ? EVENTS.filter(function (item) { return item.id === mobileEventId; })[0]
+        : null;
 
       function jumpEvent(ev) {
         setPlaying(false);
         setDay(ev.idx);
+        setMobileEventId(ev.id);
         if (stageRef.current) stageRef.current.focus(ev.lon, ev.lat, Math.max(1.45, 1.45));
       }
 
