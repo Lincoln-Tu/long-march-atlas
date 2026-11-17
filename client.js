@@ -2782,6 +2782,13 @@ function pointInPolygon(x, y, poly) {
   .lma-date { justify-content: flex-start; }
   .lma-brand { min-width: 210px; }
 }
+@media (max-width: 1180px) {
+  .lma-date .lma-date-label { display: none; }
+  .lma-date em { display: none; }
+  .lma-date strong { font-size: 18px; }
+  .lma-head-actions { gap: 3px; }
+  .lma-layer-btn { font-size: 9px; padding: 4px 5px; }
+}
 @media (max-width: 1060px) {
   .lma-right { display: none; }
   .lma-brand-copy p { display: none; }
