@@ -1,5 +1,8 @@
 # 长征 · 三维全景沙盘（独立网页版）
 
+**线上地址：** <https://lincoln-tu.github.io/long-march-atlas/>  
+**GitHub 仓库：** <https://github.com/Lincoln-Tu/long-march-atlas>
+
 这是从 Harness 插件中抽出的独立静态站点，包含完整的三维长征地图、时间轴、省界、苏维埃区域、河流/湖泊、部队态势与兵力轴。无需后端，任何静态托管平台都可以直接部署。
 
 ## 目录
@@ -64,7 +67,13 @@ powershell -ExecutionPolicy Bypass -File sync-site.ps1 -Push
 powershell -ExecutionPolicy Bypass -File sync-site.ps1 -Watch
 ```
 
-静态托管平台在收到 push 后通常 30—90 秒完成部署，这就是公网版能实现的“自动同步”。如果要毫秒级实时同步，需要把站点放在一台常开服务器上并配合文件监听/热更新；纯静态托管做不到。
+如果本机没有安装 Git，也可以在本地工作区运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File sync-github.ps1
+```
+
+它通过 GitHub Contents API 直接提交 `client.js`，不需要 Git；加 `-Watch` 会在每次保存后自动提交。静态托管平台收到提交后通常 30—90 秒完成部署，这就是公网版能实现的“自动同步”。如果要毫秒级实时同步，需要把站点放在一台常开服务器上并配合文件监听/热更新；纯静态托管做不到。
 
 ## 说明
 
