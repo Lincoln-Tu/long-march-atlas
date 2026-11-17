@@ -2745,8 +2745,19 @@ function pointInPolygon(x, y, poly) {
 }
 @media (max-width: 720px) {
   .lma-date { display: none; }
-  .lma-head { gap: 8px; }
-  .lma-layer-btn { font-size: 8px; padding: 3px 4px; }
+  .lma-head { height: 52px; padding: 0 8px; gap: 8px; }
+  .lma-brand { min-width: 0; flex: 1; }
+  .lma-brand-mark { width: 30px; height: 30px; border-radius: 8px; }
+  .lma-brand-copy h1 { font-size: 14px; letter-spacing: .05em; }
+  .lma-brand-copy p { display: none; }
+  .lma-layer-btn { display: none; }
+  .lma-head-actions { gap: 0; }
+  .lma-close { width: 30px; height: 30px; }
+  .lma-timeline { padding: 7px 8px 9px; gap: 6px; }
+  .lma-play { width: 32px; height: 32px; }
+  .lma-timeline-top span { display: none; }
+  .lma-track-scale span:nth-child(2), .lma-track-scale span:nth-child(4) { display: none; }
+  .lma-stage-tools { top: 8px; right: 8px; }
 }
 `;
 
