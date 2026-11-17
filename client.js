@@ -2731,6 +2731,16 @@ function pointInPolygon(x, y, poly) {
 .lma-soviet-row b { flex: 0 0 auto; font-size: 8.5px; font-weight: 400; color: #9c7d76; }
 .lma-soviet-empty { font-size: 10px; color: #8d7770; padding: 4px 3px 6px; }
 .lma-soviet-note { padding-top: 5px; font-size: 8px; color: #6e5f5c; letter-spacing: .04em; }
+.lma-mobile-event-chip, .lma-mobile-sheet { display: none; }
+.lma-mobile-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lma-mobile-sheet h3 { margin: 0; font-family: "Noto Serif SC","Songti SC",serif; font-size: 18px; color: #f7eedf; letter-spacing: .03em; }
+.lma-mobile-sheet-meta { font-size: 9px; color: #8fa4bb; line-height: 1.6; }
+.lma-mobile-sheet-people { font-size: 10px; color: #c9bca8; line-height: 1.6; }
+.lma-mobile-sheet p { margin: 0; font-size: 11px; line-height: 1.7; color: #aebdcd; text-align: justify; }
+.lma-mobile-sheet-actions { display: flex; gap: 8px; }
+.lma-mobile-sheet-actions button { appearance: none; border: 1px solid rgba(232,196,122,.3); background: rgba(70,54,32,.28); color: #e8c47a; font-family: inherit; font-size: 10px; padding: 7px 12px; border-radius: 8px; }
+.lma-mobile-sheet-actions button.on { background: rgba(232,196,122,.2); }
+.lma-mobile-sheet-close { width: 28px; height: 28px; font-size: 14px; }
 
 .lma-timeline { position: relative; z-index: 2; flex: 0 0 90px; display: flex; align-items: center; gap: 13px; padding: 10px 18px 12px; border-top: 1px solid var(--lma-line); background: linear-gradient(180deg, rgba(5,10,17,.7), rgba(4,8,14,.92)); }
 .lma-play { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(232,196,122,.4); background: radial-gradient(circle at 35% 28%, rgba(110,78,42,.8), rgba(35,24,16,.9)); color: #f0d29a; display: grid; place-items: center; cursor: pointer; font-size: 13px; padding-left: 2px; transition: all .16s ease; }
@@ -2808,6 +2818,23 @@ function pointInPolygon(x, y, poly) {
   .lma-timeline-top span { display: none; }
   .lma-track-scale span:nth-child(2), .lma-track-scale span:nth-child(4) { display: none; }
   .lma-stage-tools { top: 8px; right: 8px; }
+  .lma-speed { display: flex; gap: 2px; }
+  .lma-speed button { font-size: 8px; padding: 3px 4px; }
+  .lma-mobile-event-chip {
+    display: block; position: absolute; left: 8px; top: 58px; z-index: 12;
+    max-width: 72%; padding: 6px 10px; border-radius: 999px;
+    border: 1px solid rgba(232,196,122,.38); background: rgba(8,16,26,.82);
+    color: #e8d4ad; font-family: inherit; font-size: 9px; letter-spacing: .04em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lma-mobile-sheet {
+    display: flex; flex-direction: column; gap: 6px;
+    position: absolute; left: 8px; right: 8px; bottom: 96px; z-index: 30;
+    max-height: 52vh; overflow-y: auto; padding: 12px;
+    border: 1px solid rgba(232,196,122,.28); border-radius: 13px;
+    background: linear-gradient(160deg, rgba(13,25,39,.98), rgba(7,14,23,.98));
+    box-shadow: 0 14px 44px rgba(0,0,0,.6);
+  }
 }
 `;
 
