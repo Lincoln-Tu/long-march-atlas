@@ -2638,6 +2638,9 @@ function pointInPolygon(x, y, poly) {
 .lma-date strong { font-family: "Noto Serif SC","Songti SC",serif; font-size: 21px; font-weight: 600; letter-spacing: .04em; color: #f6eddb; white-space: nowrap; }
 .lma-date em { font-style: normal; font-size: 10px; letter-spacing: .08em; padding: 3px 8px; border-radius: 999px; border: 1px solid currentColor; opacity: .9; white-space: nowrap; }
 .lma-head-actions { display: flex; align-items: center; gap: 6px; }
+.lma-audio { display: flex; align-items: center; gap: 3px; flex: 0 0 auto; padding: 0 1px; }
+.lma-volume { width: 56px; height: 18px; accent-color: #e8c47a; cursor: pointer; }
+.lma-music-btn.on { color: #e8c47a; border-color: rgba(232,196,122,.55); background: rgba(70,54,32,.45); }
 .lma-layer-btn { appearance: none; border: 1px solid rgba(148,176,204,.16); background: rgba(11,22,35,.6); color: #93a8bf; font-family: inherit; font-size: 10px; letter-spacing: .04em; padding: 5px 8px; border-radius: 7px; cursor: pointer; transition: all .15s ease; }
 .lma-layer-btn:hover { color: #dbe7f5; border-color: rgba(148,176,204,.35); }
 .lma-layer-btn.on { color: #f0dfbc; border-color: rgba(232,196,122,.42); background: rgba(60,46,28,.55); box-shadow: inset 0 0 12px rgba(232,196,122,.08); }
@@ -2798,6 +2801,7 @@ function pointInPolygon(x, y, poly) {
   .lma-brand-copy p { display: none; }
   .lma-layer-btn { display: none; }
   .lma-head-actions { gap: 0; }
+  .lma-volume { width: 42px; }
   .lma-close { width: 30px; height: 30px; }
   .lma-timeline { padding: 7px 8px 9px; gap: 6px; }
   .lma-play { width: 32px; height: 32px; }
@@ -3930,9 +3934,31 @@ function pointInPolygon(x, y, poly) {
                   title: '显示/隐藏' + d[1],
                 }, d[1]);
               }),
+              h('div', { className: 'lma-audio' },
+                h('button', {
+                  className: 'lma-icon-btn lma-music-btn' + (musicOn ? ' on' : ''),
+                  onClick: toggleMusic,
+                  title: '背景音乐（原创行军主题）',
+                  'aria-label': '背景音乐',
+                  'aria-pressed': musicOn,
+                }, musicOn ? '♫' : '♪'),
+                h('input', {
+                  className: 'lma-volume',
+                  type: 'range', min: 0, max: 100, step: 1,
+                  value: musicVolume,
+                  onChange: function (ev) { changeMusicVolume(ev.target.value); },
+                  title: '背景音乐音量',
+                  'aria-label': '背景音乐音量',
+                })
+              ),
               h('button', { className: 'lma-icon-btn lma-close', onClick: close, title: '关闭 (Esc)', 'aria-label': '关闭' }, '×')
             )
           ),
+          h('button', {
+            className: 'lma-mobile-event-chip',
+            onClick: function () { setMobileEventId(e.id); },
+            title: '查看当前事件卡片',
+          }, '事件 · ' + e.title),
           h('div', { className: 'lma-body' },
             h('aside', { className: 'lma-left' },
               h('div', { className: 'lma-card lma-event-card' },
@@ -3947,6 +3973,12 @@ function pointInPolygon(x, y, poly) {
                 ),
                 h('p', null, e.summary),
                 h('div', { className: 'lma-card-actions' },
+                  h('button', {
+                    className: speakingId === e.id ? 'on' : '',
+                    onClick: function () { speakEvent(e); },
+                    title: '男声语音讲解',
+                    'aria-pressed': speakingId === e.id,
+                  }, speakingId === e.id ? '停止口播' : '口播讲解'),
                   h('button', { onClick: function () { jumpEvent(e); } }, '地图定位'),
                   pick.state === 'next'
                     ? h('span', null, '距此还有 ' + Math.max(0, Math.round(e.idx - day)) + ' 天')
