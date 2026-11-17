@@ -2297,7 +2297,7 @@ function pointInPolygon(x, y, poly) {
             ctx.fillText(e.title, tx, ty);
             ctx.restore();
           }
-          hits.push({ type: 'event', id: e.id, x: pr.x, y: pr.y, r: 14 });
+          hits.push({ type: 'event', id: e.id, x: pr.x, y: pr.y, r: 22 });
         }
       }
 
@@ -3665,7 +3665,7 @@ function pointInPolygon(x, y, poly) {
           )
         ),
         h('div', { className: 'lma-speed' },
-          [1, 2, 4].map(function (s) {
+          [0.5, 1, 2, 4].map(function (s) {
             return h('button', {
               key: s, className: speed === s ? 'on' : '',
               onClick: function () { setSpeed(s); },
@@ -4021,7 +4021,11 @@ function pointInPolygon(x, y, poly) {
               layers: layers,
               selected: selected,
               onSelectForce: function (id) { setSelected(id); },
-              onSelectEvent: function (ev) { setDay(ev.idx); setPlaying(false); },
+              onSelectEvent: function (ev) {
+                setDay(ev.idx);
+                setPlaying(false);
+                setMobileEventId(ev.id);
+              },
               onNotice: showNotice,
             }),
             h('aside', { className: 'lma-right' },
@@ -4078,9 +4082,48 @@ function pointInPolygon(x, y, poly) {
             onJumpEvent: function (ev) {
               setPlaying(false);
               setDay(ev.idx);
+              setMobileEventId(ev.id);
               if (stageRef.current) stageRef.current.focus(ev.lon, ev.lat, 1.5);
             },
           }),
+          mobileEvent ? h('div', {
+            className: 'lma-mobile-sheet',
+            role: 'dialog',
+            'aria-label': '事件详情',
+          },
+            h('div', { className: 'lma-mobile-sheet-head' },
+              h('span', {
+                className: 'lma-tag',
+                style: { color: EVENT_COLORS[mobileEvent.type] || '#e8c47a' },
+              }, mobileEvent.type),
+              h('button', {
+                className: 'lma-icon-btn lma-mobile-sheet-close',
+                onClick: function () { setMobileEventId(null); },
+                title: '关闭事件卡片',
+                'aria-label': '关闭事件卡片',
+              }, '×')
+            ),
+            h('h3', null, mobileEvent.title),
+            h('div', { className: 'lma-mobile-sheet-meta' },
+              fmtFull(mobileEvent.idx) +
+              (mobileEvent.end ? ' — ' + fmtFull(mobileEvent.endIdx) : '') +
+              ' · ' + mobileEvent.place
+            ),
+            h('div', { className: 'lma-mobile-sheet-people' }, '人物：' + mobileEvent.people),
+            h('p', null, mobileEvent.summary),
+            h('div', { className: 'lma-mobile-sheet-actions' },
+              h('button', {
+                className: speakingId === mobileEvent.id ? 'on' : '',
+                onClick: function () { speakEvent(mobileEvent); },
+                'aria-pressed': speakingId === mobileEvent.id,
+              }, speakingId === mobileEvent.id ? '停止口播' : '口播讲解'),
+              h('button', {
+                onClick: function () {
+                  if (stageRef.current) stageRef.current.focus(mobileEvent.lon, mobileEvent.lat, 1.7);
+                },
+              }, '地图定位')
+            )
+          ) : null,
           h('div', { className: 'lma-toast' + (notice ? ' show' : '') }, notice)
         )
       );
