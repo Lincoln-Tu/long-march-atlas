@@ -2949,15 +2949,22 @@ function pointInPolygon(x, y, poly) {
       const terrainRef = useRef(null);
       const overlayRef = useRef(null);
       const sceneRef = useRef(null);
+      const narrow = typeof window !== 'undefined' && window.innerWidth < 720;
+      const defaultCamera = {
+        lon: 108.0, lat: 30.0, zoom: narrow ? 0.80 : 1.12,
+        yaw: -12, pitch: narrow ? 43 : 47,
+      };
       const stateRef = useRef({
         day: day, layers: layers, selected: selected,
-        camera: { lon: 108.0, lat: 30.0, zoom: 1.12, yaw: -12, pitch: 47 },
+        camera: Object.assign({}, defaultCamera),
         hovered: null, now: 0, hitRef: [],
       });
       const camRef = useRef(stateRef.current.camera);
       const sizeRef = useRef({ w: 0, h: 0 });
       const dirtyRef = useRef(true);
       const dragRef = useRef(null);
+      const touchRef = useRef(new Map());
+      const pinchRef = useRef(null);
       const hoverRef = useRef(null);
       const animRef = useRef(0);
       const [ready, setReady] = useState(false);
@@ -3027,7 +3034,7 @@ function pointInPolygon(x, y, poly) {
             markDirty();
           },
           reset: function () {
-            animateTo({ lon: 108.0, lat: 30.0, zoom: 1.12, yaw: -12, pitch: 47 });
+            animateTo(Object.assign({}, defaultCamera));
           },
         };
       }, []);
